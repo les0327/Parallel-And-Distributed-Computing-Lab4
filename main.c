@@ -33,7 +33,6 @@ int main() {
     for (int i = 0; i < 3; i++) {
         CloseHandle(hThread[i]);
     }
-
     printf("Main finish\n");
     return 0;
 }
