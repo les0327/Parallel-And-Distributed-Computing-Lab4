@@ -5,9 +5,11 @@
 #include "functions.h"
 #include <stdio.h>
 #include <limits.h>
-#include <windows.h>;
+#include <windows.h>
 
-const int n   = 3;
+#define n   3
+#define nxn 9
+
 const int num = 1;
 
 void printVector(int *A) {
@@ -16,9 +18,10 @@ void printVector(int *A) {
     printf("\n");
 }
 
-void printMatrix(int A[][n]) {
+void printMatrix(int *A) {
     for (int i = 0; i < n; i++) {
-        printVector(A[i]);
+        for (int j = 0; j < n; j++)
+            printf("%d ", A[i*n + j]);
         printf("\n");
     }
     printf("\n");
@@ -29,33 +32,31 @@ void fillVector(int num, int *A) {
         A[i] = num;
 }
 
-void fillMatrix(int num, int A[][n]) {
-    for (int i = 0; i < n; i++) {
-        fillVector(num, A[i]);
-    }
+void fillMatrix(int num, int *A) {
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            A[i*n + j] = num;
 }
+
 /**
  * Multiplication matrix A and B
  * @param A - matrix
  * @param B - matrix
  * @param C=A*B - matrix
  */
-void matrixMultiplication(int A[][n], int B[][n], int C[][n]) {
-
-    int M[n][n];
+int * matrixMultiplication(int *A, int *B) {
+    static int C[nxn];
     int buf;
     for (int i = 0; i < n; i++ ) {
         for (int j = 0; j < n; j++) {
             buf = 0;
             for (int k = 0; k < n; k++) {
-                buf += A[i][k] * B[k][j];
+                buf += A[i*n + k] * B[k*n + j];
             }
-            M[i][j] = buf;
+            C[i*n + j] = buf;
         }
     }
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            C[i][j] = M[i][j];
+    return C;
 }
 
 /**
@@ -64,18 +65,17 @@ void matrixMultiplication(int A[][n], int B[][n], int C[][n]) {
  * @param B - matrix
  * @param C=A*B - vector
  */
-void vectorMatrixMultiplication(int *A, int B[][n], int *C) {
-    int M[n];
+int * vectorMatrixMultiplication(int *A, int *B) {
+    static int C[n];
     int buf;
     for (int i = 0; i < n; i++ ) {
         buf = 0;
         for (int j = 0; j < n; j++) {
-            buf += A[j] * B[j][i];
+            buf += A[j] * B[j*n + i];
         }
-        M[i] = buf;
+        C[i] = buf;
     }
-    for (int i = 0; i < n; i++)
-        C[i] = M[i];
+    return C;
 }
 
 /**
@@ -93,22 +93,21 @@ int scalar(int *A, int *B) {
 }
 
 
-
-
 /**
  * Add matrix A and B
  * @param A - matrix
  * @param B - matrix
  * @param C=A+B
  */
-void matrixAddition(int A[][n], int B[][n], int C[][n]) {
+int * matrixAddition(int *A, int *B) {
 
+    static int C[nxn];
     for (int i = 0; i < n; i++ ) {
         for (int j = 0; j < n; j++) {
-            C[i][j] = A[i][j] + B[i][j];
+            C[i*n + j] = A[i*n + j] + B[i*n + j];
         }
     }
-
+    return C;
 }
 
 /**
@@ -117,9 +116,11 @@ void matrixAddition(int A[][n], int B[][n], int C[][n]) {
  * @param A
  * @param B=num*A - vector
  */
-void numberVectorMultiplication(int num, int *A, int *B) {
+int * numberVectorMultiplication(int num, int *A) {
+    static int B[n];
     for (int i = 0; i < n; i++)
         B[i] = A[i] * num;
+    return B;
 }
 
 /**
@@ -127,17 +128,12 @@ void numberVectorMultiplication(int num, int *A, int *B) {
  * @param A - matrix
  * @param max element
  */
-int matrixMax(int A[][n]) {
+int matrixMax(int *A) {
     int max = INT_MIN;
-
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (A[i][j] > max) {
-                max = A[i][j];
-            }
-        }
-    }
-
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            if (A[i*n + j] > max)
+                max = A[i*n + j];
     return max;
 }
 
@@ -145,23 +141,24 @@ int matrixMax(int A[][n]) {
  * Sort matrix A
  * @param A - matrix
  */
-void matrixSort(int A[][n]) {
+int * matrixSort(int *A) {
     int index = 0;
     int max   = 0;
     for (int line = 0; line < n; line++) {
         for (int i = 0; i < n; i++) {
             index = i;
-            max   = A[line][i];
+            max   = A[line*n + i];
             for (int j = i + 1; j < n; j++) {
-                if (A[line][j] > max) {
+                if (A[line*n + j] > max) {
                     index = j;
-                    max   = A[line][j];
+                    max   = A[line*n + j];
                 }
             }
-            A[line][index] = A[line][i];
-            A[line][i]     = max;
+            A[line*n + index] = A[line*n + i];
+            A[line*n + i]     = max;
         }
     }
+    return A;
 }
 
 /**
@@ -169,8 +166,8 @@ void matrixSort(int A[][n]) {
   */
 void threadFunction1() {
     printf("Thread1 start\n");
-    int MA[n][n];
-    int MD[n][n];
+    int MA[nxn];
+    int MD[nxn];
     int a[n];
     int b[n];
     int c[n];
@@ -184,9 +181,7 @@ void threadFunction1() {
     fillMatrix(num, MD);
 
     Sleep(1000);
-    matrixMultiplication(MA, MD, MA);
-    vectorMatrixMultiplication(d, MA, d);
-    int e = scalar(a, b) + scalar(c, d);
+    int e = scalar(a, b) + scalar(c, vectorMatrixMultiplication(b, matrixMultiplication(MA, MD)));
     Sleep(1000);
 
     if (n < 7) {
@@ -201,20 +196,16 @@ void threadFunction1() {
   */
 void threadFunction2() {
     printf("Thread2 start\n");
-    int ML[n][n];
-    int MF[n][n];
-    int MG[n][n];
-    int MH[n][n];
+    int MF[nxn];
+    int MG[nxn];
+    int MH[nxn];
 
     fillMatrix(num, MF);
     fillMatrix(num, MG);
     fillMatrix(num, MH);
 
     Sleep(2000);
-
-    matrixMultiplication(MG, MH, ML);
-    matrixAddition(ML, MF, ML);
-    matrixSort(ML);
+    int *ML = matrixSort(matrixAddition(MF, matrixMultiplication(MG, MH)));
     Sleep(2000);
     if (n < 7) {
         printf("T2: ML =\n");
@@ -230,18 +221,16 @@ void threadFunction2() {
   */
 void threadFunction3() {
     printf("Thread3 start\n");
-    int MP[n][n];
-    int MR[n][n];
+    int MP[nxn];
+    int MR[nxn];
     int T[n];
-    int O[n];
 
     fillMatrix(num, MP);
     fillMatrix(num, MR);
     fillVector(num, T);
 
     Sleep(500);
-    matrixMultiplication(MP, MR, MP);
-    numberVectorMultiplication(matrixMax(MP), T, O);
+    int *O = numberVectorMultiplication(matrixMax(matrixMultiplication(MP, MR)), T);
     Sleep(500);
 
     if (n < 7) {
